@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>视频转为字符串</title>
+    <style>
+      *{margin:0;padding:0;box-sizing: border-box;}
+      body {font-size: 12px; margin: 10px; font-family: simsun; background: #fff;}
+      p { height: 12px;margin:0;padding:0;}
+      .text{ width:360px;height:640px;float:left; font-size:12px; }
+      .text p{ line-height:12px; color:#000; }
+      .clearfix{zoom:1}
+      .clearfix::after{content:'';display:block;width:0;height:0;visibility:hidden;clear: both;}
+    </style>
+</head>
+
+<body>
+  <div class="clearfix">
+    <div style="float:left;width:240px;">
+      <video src="./1234.mp4" controls id="video" width="200"></video>
+      <h2 style="padding:10px;color:#f00;">点击这里的播放按钮看效果，建议使用谷歌浏览器，需搭建http服务才能看到效果</h2>	
+    </div>
+    <div class="text" id="TO"></div>
+    <div style="width:360px;height:640px;float:left;">
+      <canvas id="c1" width="360" height="640"></canvas>
+    </div>
+  </div>
+    <script>
+      // 根据灰度生成相应字符
+      function toText(g) {
+          if (g <= 30) {
+              return '#';
+          } else if (g > 30 && g <= 60) {
+              return '%';
+          } else if (g > 60 && g <= 90) {
+              return '&';
+          } else if (g > 90 && g <= 90) {
+              return 'm';
+          } else if (g > 120 && g <= 150) {
+              return '.';//h
+          } else if (g > 150 && g <= 180) {
+              return '.';//n
+          } else if (g > 180 && g <= 210) {
+              return '.';//!
+          } else if (g > 210 && g <= 240) {
+              return '.';//:
+          } else {
+              return '.';
+          }
+      }
+      // 根据rgb值计算灰度
+      function getGray(r, g, b) {
+          return 0.299 * r + 0.578 * g + 0.114 * b;
+      }
+
+      // 转换
+      var toDiv =  document.getElementById('TO');
+      function init(ctx,width,height) {
+          var imgData = ctx.getImageData(0, 0, width, height);
+          var imgDataArr = imgData.data;
+          var imgDataWidth = imgData.width;
+          var imgDataHeight = imgData.height;
+          var html = '';
+          for (h = 0; h < imgDataHeight; h += 12) {
+              var p = '<p>';
+              for (w = 0; w < imgDataWidth; w += 6) {
+                  var index = (w + imgDataWidth * h) * 4;
+                  var r = imgDataArr[index + 0];
+                  var g = imgDataArr[index + 1];
+                  var b = imgDataArr[index + 2];
+                  var gray = getGray(r, g, b);
+                  p += toText(gray);
+              }
+              p += '</p>';
+              html += p;
+          }
+          toDiv.innerHTML = html;
+      }
+
+      var canvasDrawVideo = {
+          onLoad: function (canvas) {
+              this.canvas = document.getElementById(canvas);
+              this.video = document.getElementById('video');
+              this.ctx = this.canvas.getContext('2d');
+              this.render();
+              this.video.play();
+          },
+          addNewWord: function(data) {
+              var newWord = new Barrage(this.canvas, this.ctx, data);
+              wordObj.push(newWord);
+          },
+          render: function() {
+              function renderWord() {
+                  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                  this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                  init(this.ctx,this.canvas.width, this.canvas.height);
+                  requestAnimationFrame(renderWord.bind(this));
+              }
+              setTimeout(renderWord.bind(this), 0);
+          }
+      }
+      window.onload = function(){
+        canvasDrawVideo.onLoad('c1');
+      }
+    </script>
+</body>
+</html>
